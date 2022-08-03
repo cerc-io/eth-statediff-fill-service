@@ -3,7 +3,7 @@ env:
   STACK_ORCHESTRATOR_REF: "f2fd766f5400fcb9eb47b50675d2e3b1f2753702"
   IPLD_ETH_DB_REF: "be345e0733d2c025e4082c5154e441317ae94cf7"
   GO_ETHEREUM_REF: "v1.10.21-statediff-4.1.2-alpha" # Use the tag, we are going to download the bin not build it.
-  IPLD_ETH_SERVER_REF: "ba01123f54e5d8fe99b98d26fa78f8d5b3e0d433"
+  IPLD_ETH_SERVER_REF: "c9e6055cfd721dcb44f5a6c13ece6e9553addfc6"
 
 on: [pull_request]
 jobs:
