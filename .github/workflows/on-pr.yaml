@@ -104,16 +104,16 @@ jobs:
           echo watched_address_gap_filler_interval=$WATCHED_ADDRESS_GAP_FILLER_INTERVAL >> ./config.sh
           cat ./config.sh
       - uses: actions/checkout@v2
-          with:
-            ref: ${{ inputs.GO_ETHEREUM_REF }}
-            repository: vulcanize/go-ethereum
-            path: "./go-ethereum/"
+        with:
+          ref: ${{ inputs.GO_ETHEREUM_REF }}
+          repository: vulcanize/go-ethereum
+          path: "./go-ethereum/"
       - name: Build geth
-          run: |
-            cd $GITHUB_WORKSPACE/stack-orchestrator/helper-scripts
-            ./compile-geth.sh \
-            -p "$GITHUB_WORKSPACE/config.sh" \
-            -e docker
+        run: |
+          cd $GITHUB_WORKSPACE/stack-orchestrator/helper-scripts
+          ./compile-geth.sh \
+          -p "$GITHUB_WORKSPACE/config.sh" \
+          -e docker
       #- name: Download Geth geth
       #  run: |
       #    cd $GITHUB_WORKSPACE/stack-orchestrator/helper-scripts
