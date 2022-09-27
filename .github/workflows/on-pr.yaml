@@ -1,9 +1,9 @@
 name: Docker Build
 env:
   STACK_ORCHESTRATOR_REF: "f2fd766f5400fcb9eb47b50675d2e3b1f2753702"
-  IPLD_ETH_DB_REF: "be345e0733d2c025e4082c5154e441317ae94cf7"
-  GO_ETHEREUM_REF: "v1.10.21-statediff-4.1.2-alpha" # Use the tag, we are going to download the bin not build it.
-  IPLD_ETH_SERVER_REF: "c9e6055cfd721dcb44f5a6c13ece6e9553addfc6"
+  IPLD_ETH_DB_REF: "d4d704616ba0f87733853c78787bf54c9868d2ac"
+  GO_ETHEREUM_REF: "v1.10.25-statediff-4.2.1-alpha" # Use the tag, we are going to download the bin not build it.
+  IPLD_ETH_SERVER_REF: "b29b5269eebb688ecb57ac38119c0f1e3ae1a346"
 
 on: [pull_request]
 jobs:
@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ env.IPLD_ETH_DB_REF }}
-          repository: vulcanize/ipld-eth-db
+          repository: cerc-io/ipld-eth-db
           path: "./ipld-eth-db/"
       - uses: actions/checkout@v2
         with:
@@ -84,12 +84,12 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ env.IPLD_ETH_DB_REF }}
-          repository: vulcanize/ipld-eth-db
+          repository: cerc-io/ipld-eth-db
           path: "./ipld-eth-db/"
       - uses: actions/checkout@v2
         with:
           ref: ${{ env.IPLD_ETH_SERVER_REF }}
-          repository: vulcanize/ipld-eth-server
+          repository: cerc-io/ipld-eth-server
           path: "./ipld-eth-server/"
       - name: Create config file
         run: |
@@ -108,7 +108,7 @@ jobs:
       - name: Download Geth geth
         run: |
           cd $GITHUB_WORKSPACE/stack-orchestrator/helper-scripts
-          wget https://github.com/vulcanize/go-ethereum/releases/download/${{env.GO_ETHEREUM_REF}}/geth-linux-amd64
+          wget https://git.vdb.to/api/packages/cerc-io/generic/go-ethereum/${{env.GO_ETHEREUM_REF}}/geth-linux-amd64
       - name: Run docker compose
         run: |
           docker-compose  \
