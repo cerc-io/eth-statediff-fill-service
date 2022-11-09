@@ -18,7 +18,7 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/eth-statediff-fill-service/cmd"
+	"github.com/cerc-io/eth-statediff-fill-service/cmd"
 )
 
 func main() {

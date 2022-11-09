@@ -28,7 +28,7 @@ import (
 	"github.com/spf13/viper"
 
 	ethServerShared "github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
-	"github.com/vulcanize/eth-statediff-fill-service/pkg/prom"
+	"github.com/cerc-io/eth-statediff-fill-service/pkg/prom"
 )
 
 // Env variables

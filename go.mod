@@ -1,4 +1,4 @@
-module github.com/vulcanize/eth-statediff-fill-service
+module github.com/cerc-io/eth-statediff-fill-service
 
 go 1.18
 

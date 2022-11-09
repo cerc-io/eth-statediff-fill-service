@@ -28,7 +28,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/vulcanize/eth-statediff-fill-service/pkg/serve"
+	"github.com/cerc-io/eth-statediff-fill-service/pkg/serve"
 )
 
 // WatchedAddress type is used to process currently watched addresses
