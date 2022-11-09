@@ -30,4 +30,4 @@ build:
 ## Build docker image
 .PHONY: docker-build
 docker-build:
-	docker build -t vulcanize/eth-statediff-fill-service .
+	docker build -t cerc-io/eth-statediff-fill-service .

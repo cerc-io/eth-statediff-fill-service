@@ -30,8 +30,8 @@ import (
 
 	"github.com/cerc-io/ipld-eth-server/v4/pkg/eth/test_helpers"
 	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
-	fill "github.com/vulcanize/eth-statediff-fill-service/pkg/fill"
-	"github.com/vulcanize/eth-statediff-fill-service/pkg/serve"
+	fill "github.com/cerc-io/eth-statediff-fill-service/pkg/fill"
+	"github.com/cerc-io/eth-statediff-fill-service/pkg/serve"
 )
 
 var _ = Describe("Service", func() {

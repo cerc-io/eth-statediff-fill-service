@@ -25,7 +25,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/netutil"
 	"github.com/ethereum/go-ethereum/rpc"
 	log "github.com/sirupsen/logrus"
-	"github.com/vulcanize/eth-statediff-fill-service/pkg/prom"
+	"github.com/cerc-io/eth-statediff-fill-service/pkg/prom"
 )
 
 var (

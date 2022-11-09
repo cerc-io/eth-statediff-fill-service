@@ -25,10 +25,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	fill "github.com/vulcanize/eth-statediff-fill-service/pkg/fill"
-	srpc "github.com/vulcanize/eth-statediff-fill-service/pkg/rpc"
-	s "github.com/vulcanize/eth-statediff-fill-service/pkg/serve"
-	v "github.com/vulcanize/eth-statediff-fill-service/version"
+	fill "github.com/cerc-io/eth-statediff-fill-service/pkg/fill"
+	srpc "github.com/cerc-io/eth-statediff-fill-service/pkg/rpc"
+	s "github.com/cerc-io/eth-statediff-fill-service/pkg/serve"
+	v "github.com/cerc-io/eth-statediff-fill-service/version"
 )
 
 // serveCmd represents the serve command

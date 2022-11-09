@@ -19,7 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	v "github.com/vulcanize/eth-statediff-fill-service/version"
+	v "github.com/cerc-io/eth-statediff-fill-service/version"
 )
 
 // versionCmd represents the version command

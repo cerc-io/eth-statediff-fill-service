@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/vulcanize/eth-statediff-fill-service/pkg/prom"
+	"github.com/cerc-io/eth-statediff-fill-service/pkg/prom"
 )
 
 var (
