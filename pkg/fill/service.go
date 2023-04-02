@@ -17,6 +17,8 @@
 package fill
 
 import (
+	"context"
+	"fmt"
 	"math"
 	"strings"
 	"sync"
@@ -116,8 +118,17 @@ func (s *Service) fill() {
 		}
 
 		if len(fillAddresses) > 0 {
-			s.writeStateDiffAt(blockNumber, params)
-			s.UpdateLastFilledAt(blockNumber, fillAddresses)
+			jobID, err := s.writeStateDiffAt(blockNumber, params)
+			if err != nil {
+				log.Fatal(err)
+			}
+			ok, err := s.awaitStatus(jobID)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if ok {
+				s.UpdateLastFilledAt(blockNumber, fillAddresses)
+			}
 		}
 	}
 }
@@ -198,9 +209,29 @@ func (s *Service) fetchWatchedAddresses() []WatchedAddress {
 }
 
 // writeStateDiffAt makes a RPC call to writeout statediffs at a blocknumber with the given params
-func (s *Service) writeStateDiffAt(blockNumber uint64, params statediff.Params) {
-	err := s.client.Call(nil, "statediff_writeStateDiffAt", blockNumber, params)
+func (s *Service) writeStateDiffAt(blockNumber uint64, params statediff.Params) (statediff.JobID, error) {
+	var jobID statediff.JobID
+	err := s.client.Call(jobID, "statediff_writeStateDiffAt", blockNumber, params)
 	if err != nil {
-		log.Fatalf("Error making a RPC call to write statediff at block number %d: %s", blockNumber, err.Error())
+		return 0, fmt.Errorf("error making a RPC call to write statediff at block number %d: %s", blockNumber, err.Error())
+	}
+	return jobID, nil
+}
+
+// awaitStatus awaits status update for writeStateDiffAt job
+func (s *Service) awaitStatus(jobID statediff.JobID) (bool, error) {
+	status := make(chan statediff.JobStatus)
+	sub, err := s.client.Subscribe(context.Background(), "statediff", status, "streamWrites")
+	if err != nil {
+		return false, fmt.Errorf("error making a RPC call to streamWrites: %s", err.Error())
+	}
+	for {
+		select {
+		case err := <-sub.Err():
+			sub.Unsubscribe()
+			return false, fmt.Errorf("error while awaiting status update for jobID %d: %s", jobID, err.Error())
+		case <-status: // status fields are currently private so can't match to jobID
+			return true, nil
+		}
 	}
 }

@@ -27,8 +27,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/viper"
 
-	ethServerShared "github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 	"github.com/cerc-io/eth-statediff-fill-service/pkg/prom"
+	ethServerShared "github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 )
 
 // Env variables
