@@ -20,9 +20,13 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"math/big"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -46,19 +50,21 @@ type WatchedAddress struct {
 
 // Service is the underlying struct for the watched address gap filling service
 type Service struct {
-	db       *sqlx.DB
-	client   *rpc.Client
-	interval int
-	quitChan chan bool
+	db        *sqlx.DB
+	client    *rpc.Client
+	ethClient *ethclient.Client
+	interval  int
+	quitChan  chan bool
 }
 
 // NewServer creates a new Service
 func New(config *serve.Config) *Service {
 	return &Service{
-		db:       config.DB,
-		client:   config.Client,
-		interval: config.WatchedAddressGapFillInterval,
-		quitChan: make(chan bool),
+		db:        config.DB,
+		client:    config.Client,
+		ethClient: ethclient.NewClient(config.Client),
+		interval:  config.WatchedAddressGapFillInterval,
+		quitChan:  make(chan bool),
 	}
 }
 
@@ -118,17 +124,27 @@ func (s *Service) fill() {
 		}
 
 		if len(fillAddresses) > 0 {
-			jobID, err := s.writeStateDiffAt(blockNumber, params)
+			hash, err := s.getBlockHashForNum(blockNumber)
 			if err != nil {
 				log.Fatal(err)
 			}
-			ok, err := s.awaitStatus(jobID)
-			if err != nil {
+			if err := s.writeStateDiffFor(hash, params); err != nil {
 				log.Fatal(err)
 			}
-			if ok {
-				s.UpdateLastFilledAt(blockNumber, fillAddresses)
-			}
+			s.UpdateLastFilledAt(blockNumber, fillAddresses)
+			/*
+				jobID, err := s.writeStateDiffAt(blockNumber, params)
+				if err != nil {
+					log.Fatal(err)
+				}
+				ok, err := s.awaitStatus(jobID)
+				if err != nil {
+					log.Fatal(err)
+				}
+				if ok {
+					s.UpdateLastFilledAt(blockNumber, fillAddresses)
+				}
+			*/
 		}
 	}
 }
@@ -211,11 +227,30 @@ func (s *Service) fetchWatchedAddresses() []WatchedAddress {
 // writeStateDiffAt makes a RPC call to writeout statediffs at a blocknumber with the given params
 func (s *Service) writeStateDiffAt(blockNumber uint64, params statediff.Params) (statediff.JobID, error) {
 	var jobID statediff.JobID
-	err := s.client.Call(jobID, "statediff_writeStateDiffAt", blockNumber, params)
+	err := s.client.Call(&jobID, "statediff_writeStateDiffAt", blockNumber, params)
 	if err != nil {
 		return 0, fmt.Errorf("error making a RPC call to write statediff at block number %d: %s", blockNumber, err.Error())
 	}
 	return jobID, nil
+}
+
+// writeStateDiffFor makes a RPC call to writeout statediffs at a block hash with the given params
+func (s *Service) writeStateDiffFor(hash common.Hash, params statediff.Params) error {
+	err := s.client.Call(nil, "statediff_writeStateDiffFor", hash, params)
+	if err != nil {
+		return fmt.Errorf("error making a RPC call to write statediff at block hash %s: %s", hash.String(), err.Error())
+	}
+	return nil
+}
+
+// getBlockHashForNum returns the block hash for the provided block number
+func (s *Service) getBlockHashForNum(blockNumber uint64) (common.Hash, error) {
+	bNum, _ := new(big.Int).SetString(strconv.FormatUint(blockNumber, 10), 10)
+	header, err := s.ethClient.HeaderByNumber(context.Background(), bNum)
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("error making RPC call to get header for provided number %d: %s", blockNumber, err.Error())
+	}
+	return header.Hash(), nil
 }
 
 // awaitStatus awaits status update for writeStateDiffAt job
