@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -255,8 +256,8 @@ func (s *Service) getBlockHashForNum(blockNumber uint64) (common.Hash, error) {
 
 // awaitStatus awaits status update for writeStateDiffAt job
 func (s *Service) awaitStatus(jobID statediff.JobID) (bool, error) {
-	status := make(chan statediff.JobStatus)
-	sub, err := s.client.Subscribe(context.Background(), "statediff", status, "streamWrites")
+	statusChan := make(chan statediff.JobStatus)
+	sub, err := s.client.Subscribe(context.Background(), "statediff", statusChan, "streamWrites")
 	if err != nil {
 		return false, fmt.Errorf("error making a RPC call to streamWrites: %s", err.Error())
 	}
@@ -265,8 +266,26 @@ func (s *Service) awaitStatus(jobID statediff.JobID) (bool, error) {
 		case err := <-sub.Err():
 			sub.Unsubscribe()
 			return false, fmt.Errorf("error while awaiting status update for jobID %d: %s", jobID, err.Error())
-		case <-status: // status fields are currently private so can't match to jobID
-			return true, nil
+		case status := <-statusChan: // status fields are currently private so can't match to jobID
+			idByName := reflect.ValueOf(&status).Elem().FieldByName("id")
+			errByName := reflect.ValueOf(&status).Elem().FieldByName("err")
+			var e error
+			if errByName.CanConvert(reflect.TypeOf(e)) {
+				err := errByName.Interface().(error)
+				if err != nil {
+					return false, err
+				}
+			} else {
+				return false, fmt.Errorf("unable to access JobStatus 'err' field by reflection")
+			}
+			if idByName.CanConvert(reflect.TypeOf(jobID)) {
+				id := idByName.Interface().(statediff.JobID)
+				if id == jobID {
+					return true, nil
+				}
+			} else {
+				return false, fmt.Errorf("unable to access JobStatus 'id' field by reflection")
+			}
 		}
 	}
 }
