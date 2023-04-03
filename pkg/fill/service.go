@@ -125,27 +125,27 @@ func (s *Service) fill() {
 		}
 
 		if len(fillAddresses) > 0 {
+			hash, err := s.getBlockHashForNum(blockNumber)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err := s.writeStateDiffFor(hash, params); err != nil {
+				log.Fatal(err)
+			}
+			s.UpdateLastFilledAt(blockNumber, fillAddresses)
 			/*
-				hash, err := s.getBlockHashForNum(blockNumber)
+				jobID, err := s.writeStateDiffAt(blockNumber, params)
 				if err != nil {
 					log.Fatal(err)
 				}
-				if err := s.writeStateDiffFor(hash, params); err != nil {
+				ok, err := s.awaitStatus(jobID)
+				if err != nil {
 					log.Fatal(err)
 				}
-				s.UpdateLastFilledAt(blockNumber, fillAddresses)
+				if ok {
+					s.UpdateLastFilledAt(blockNumber, fillAddresses)
+				}
 			*/
-			jobID, err := s.writeStateDiffAt(blockNumber, params)
-			if err != nil {
-				log.Fatal(err)
-			}
-			ok, err := s.awaitStatus(jobID)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if ok {
-				s.UpdateLastFilledAt(blockNumber, fillAddresses)
-			}
 		}
 	}
 }
