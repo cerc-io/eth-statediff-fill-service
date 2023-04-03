@@ -17,10 +17,17 @@
 package fill
 
 import (
+	"context"
+	"fmt"
 	"math"
+	"math/big"
+	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -44,19 +51,21 @@ type WatchedAddress struct {
 
 // Service is the underlying struct for the watched address gap filling service
 type Service struct {
-	db       *sqlx.DB
-	client   *rpc.Client
-	interval int
-	quitChan chan bool
+	db        *sqlx.DB
+	client    *rpc.Client
+	ethClient *ethclient.Client
+	interval  int
+	quitChan  chan bool
 }
 
 // NewServer creates a new Service
 func New(config *serve.Config) *Service {
 	return &Service{
-		db:       config.DB,
-		client:   config.Client,
-		interval: config.WatchedAddressGapFillInterval,
-		quitChan: make(chan bool),
+		db:        config.DB,
+		client:    config.Client,
+		ethClient: ethclient.NewClient(config.Client),
+		interval:  config.WatchedAddressGapFillInterval,
+		quitChan:  make(chan bool),
 	}
 }
 
@@ -116,8 +125,27 @@ func (s *Service) fill() {
 		}
 
 		if len(fillAddresses) > 0 {
-			s.writeStateDiffAt(blockNumber, params)
+			hash, err := s.getBlockHashForNum(blockNumber)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if err := s.writeStateDiffFor(hash, params); err != nil {
+				log.Fatal(err)
+			}
 			s.UpdateLastFilledAt(blockNumber, fillAddresses)
+			/*
+				jobID, err := s.writeStateDiffAt(blockNumber, params)
+				if err != nil {
+					log.Fatal(err)
+				}
+				ok, err := s.awaitStatus(jobID)
+				if err != nil {
+					log.Fatal(err)
+				}
+				if ok {
+					s.UpdateLastFilledAt(blockNumber, fillAddresses)
+				}
+			*/
 		}
 	}
 }
@@ -198,9 +226,66 @@ func (s *Service) fetchWatchedAddresses() []WatchedAddress {
 }
 
 // writeStateDiffAt makes a RPC call to writeout statediffs at a blocknumber with the given params
-func (s *Service) writeStateDiffAt(blockNumber uint64, params statediff.Params) {
-	err := s.client.Call(nil, "statediff_writeStateDiffAt", blockNumber, params)
+func (s *Service) writeStateDiffAt(blockNumber uint64, params statediff.Params) (statediff.JobID, error) {
+	var jobID statediff.JobID
+	err := s.client.Call(&jobID, "statediff_writeStateDiffAt", blockNumber, params)
 	if err != nil {
-		log.Fatalf("Error making a RPC call to write statediff at block number %d: %s", blockNumber, err.Error())
+		return 0, fmt.Errorf("error making a RPC call to write statediff at block number %d: %s", blockNumber, err.Error())
+	}
+	return jobID, nil
+}
+
+// writeStateDiffFor makes a RPC call to writeout statediffs at a block hash with the given params
+func (s *Service) writeStateDiffFor(hash common.Hash, params statediff.Params) error {
+	err := s.client.Call(nil, "statediff_writeStateDiffFor", hash, params)
+	if err != nil {
+		return fmt.Errorf("error making a RPC call to write statediff at block hash %s: %s", hash.String(), err.Error())
+	}
+	return nil
+}
+
+// getBlockHashForNum returns the block hash for the provided block number
+func (s *Service) getBlockHashForNum(blockNumber uint64) (common.Hash, error) {
+	bNum, _ := new(big.Int).SetString(strconv.FormatUint(blockNumber, 10), 10)
+	header, err := s.ethClient.HeaderByNumber(context.Background(), bNum)
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("error making RPC call to get header for provided number %d: %s", blockNumber, err.Error())
+	}
+	return header.Hash(), nil
+}
+
+// awaitStatus awaits status update for writeStateDiffAt job
+func (s *Service) awaitStatus(jobID statediff.JobID) (bool, error) {
+	statusChan := make(chan statediff.JobStatus)
+	sub, err := s.client.Subscribe(context.Background(), "statediff", statusChan, "streamWrites")
+	if err != nil {
+		return false, fmt.Errorf("error making a RPC call to streamWrites: %s", err.Error())
+	}
+	for {
+		select {
+		case err := <-sub.Err():
+			sub.Unsubscribe()
+			return false, fmt.Errorf("error while awaiting status update for jobID %d: %s", jobID, err.Error())
+		case status := <-statusChan: // status fields are currently private so can't match to jobID
+			idByName := reflect.ValueOf(&status).Elem().FieldByName("id")
+			errByName := reflect.ValueOf(&status).Elem().FieldByName("err")
+			var e error
+			if errByName.CanConvert(reflect.TypeOf(e)) {
+				err := errByName.Interface().(error)
+				if err != nil {
+					return false, err
+				}
+			} else {
+				return false, fmt.Errorf("unable to access JobStatus 'err' field by reflection")
+			}
+			if idByName.CanConvert(reflect.TypeOf(jobID)) {
+				id := idByName.Interface().(statediff.JobID)
+				if id == jobID {
+					return true, nil
+				}
+			} else {
+				return false, fmt.Errorf("unable to access JobStatus 'id' field by reflection")
+			}
+		}
 	}
 }

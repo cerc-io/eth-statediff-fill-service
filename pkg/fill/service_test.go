@@ -28,10 +28,10 @@ import (
 	sdtypes "github.com/ethereum/go-ethereum/statediff/types"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/cerc-io/ipld-eth-server/v4/pkg/eth/test_helpers"
-	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 	fill "github.com/cerc-io/eth-statediff-fill-service/pkg/fill"
 	"github.com/cerc-io/eth-statediff-fill-service/pkg/serve"
+	"github.com/cerc-io/ipld-eth-server/v4/pkg/eth/test_helpers"
+	"github.com/cerc-io/ipld-eth-server/v4/pkg/shared"
 )
 
 var _ = Describe("Service", func() {
