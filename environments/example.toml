@@ -13,6 +13,7 @@
     httpPath = "127.0.0.1:8085" # $SERVER_HTTP_PATH
 
 [ethereum]
+    wsPath = "127.0.0.1:8546" # $ETH_WS_PATH
     httpPath = "127.0.0.1:8545" # $ETH_HTTP_PATH
 
 [watch]

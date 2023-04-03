@@ -65,11 +65,12 @@ func NewConfig() (*Config, error) {
 	c := new(Config)
 
 	viper.BindEnv("ethereum.httpPath", ETH_HTTP_PATH)
+	viper.BindEnv("ethereum.wsPath", ETH_WS_PATH)
 
 	c.dbInit()
-	ethHTTP := viper.GetString("ethereum.httpPath")
-	ethHTTPEndpoint := fmt.Sprintf("http://%s", ethHTTP)
-	cli, err := getEthClient(ethHTTPEndpoint)
+	ethPath := viper.GetString("ethereum.wsPath")
+	ethEndpointUrl := fmt.Sprintf("ws://%s", ethPath)
+	cli, err := getEthClient(ethEndpointUrl)
 	if err != nil {
 		return nil, err
 	}

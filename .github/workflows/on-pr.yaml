@@ -64,6 +64,7 @@ jobs:
       ETH_FORWARD_ETH_CALLS: false
       ETH_PROXY_ON_ERROR: false
       ETH_HTTP_PATH: "go-ethereum:8545"
+      ETH_WS_PATH: "go-ethereum:8546"
       WATCHED_ADDRESS_GAP_FILLER_INTERVAL: 5
     runs-on: ubuntu-latest
     steps:
@@ -103,6 +104,7 @@ jobs:
           echo eth_forward_eth_calls=$ETH_FORWARD_ETH_CALLS >> ./config.sh
           echo eth_proxy_on_error=$ETH_PROXY_ON_ERROR >> ./config.sh
           echo eth_http_path=$ETH_HTTP_PATH >> ./config.sh
+          echo eth_ws_path=$ETH_WS_PATH >> ./config.sh
           echo watched_address_gap_filler_interval=$WATCHED_ADDRESS_GAP_FILLER_INTERVAL >> ./config.sh
           cat ./config.sh
       - name: Download Geth geth

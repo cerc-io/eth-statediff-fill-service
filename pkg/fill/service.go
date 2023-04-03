@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -125,27 +124,22 @@ func (s *Service) fill() {
 		}
 
 		if len(fillAddresses) > 0 {
-			hash, err := s.getBlockHashForNum(blockNumber)
+			ctx := context.Background()
+			sub, err := s.subscribeWrites(ctx)
 			if err != nil {
 				log.Fatal(err)
 			}
-			if err := s.writeStateDiffFor(hash, params); err != nil {
+			jobID, err := s.writeStateDiffAt(blockNumber, params)
+			if err != nil {
 				log.Fatal(err)
 			}
-			s.UpdateLastFilledAt(blockNumber, fillAddresses)
-			/*
-				jobID, err := s.writeStateDiffAt(blockNumber, params)
-				if err != nil {
-					log.Fatal(err)
-				}
-				ok, err := s.awaitStatus(jobID)
-				if err != nil {
-					log.Fatal(err)
-				}
-				if ok {
-					s.UpdateLastFilledAt(blockNumber, fillAddresses)
-				}
-			*/
+			ok, err := awaitStatus(sub, jobID, ctx)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if ok {
+				s.UpdateLastFilledAt(blockNumber, fillAddresses)
+			}
 		}
 	}
 }
@@ -254,38 +248,40 @@ func (s *Service) getBlockHashForNum(blockNumber uint64) (common.Hash, error) {
 	return header.Hash(), nil
 }
 
-// awaitStatus awaits status update for writeStateDiffAt job
-func (s *Service) awaitStatus(jobID statediff.JobID) (bool, error) {
+type writeSub struct {
+	sub        *rpc.ClientSubscription
+	statusChan <-chan statediff.JobStatus
+}
+
+func (ws writeSub) close() {
+	ws.sub.Unsubscribe()
+}
+
+// subscribeWrites subscribes to the streamWrites job status endpoint
+func (s *Service) subscribeWrites(ctx context.Context) (writeSub, error) {
 	statusChan := make(chan statediff.JobStatus)
-	sub, err := s.client.Subscribe(context.Background(), "statediff", statusChan, "streamWrites")
+	sub, err := s.client.Subscribe(ctx, "statediff", statusChan, "streamWrites")
 	if err != nil {
-		return false, fmt.Errorf("error making a RPC call to streamWrites: %s", err.Error())
+		return writeSub{}, fmt.Errorf("error subscribing to streamWrites: %w", err)
 	}
+	return writeSub{sub, statusChan}, err
+}
+
+// awaitStatus awaits status update for a writeStateDiffAt job
+func awaitStatus(ws writeSub, job statediff.JobID, ctx context.Context) (bool, error) {
 	for {
 		select {
-		case err := <-sub.Err():
-			sub.Unsubscribe()
-			return false, fmt.Errorf("error while awaiting status update for jobID %d: %s", jobID, err.Error())
-		case status := <-statusChan: // status fields are currently private so can't match to jobID
-			idByName := reflect.ValueOf(&status).Elem().FieldByName("id")
-			errByName := reflect.ValueOf(&status).Elem().FieldByName("err")
-			var e error
-			if errByName.CanConvert(reflect.TypeOf(e)) {
-				err := errByName.Interface().(error)
-				if err != nil {
-					return false, err
-				}
-			} else {
-				return false, fmt.Errorf("unable to access JobStatus 'err' field by reflection")
+		case err := <-ws.sub.Err():
+			return false, err
+		case status := <-ws.statusChan:
+			if status.Err != nil {
+				return false, status.Err
 			}
-			if idByName.CanConvert(reflect.TypeOf(jobID)) {
-				id := idByName.Interface().(statediff.JobID)
-				if id == jobID {
-					return true, nil
-				}
-			} else {
-				return false, fmt.Errorf("unable to access JobStatus 'id' field by reflection")
+			if status.ID == job {
+				return true, nil
 			}
+		case <-ctx.Done():
+			return false, ctx.Err()
 		}
 	}
 }
