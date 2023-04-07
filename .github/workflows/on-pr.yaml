@@ -2,7 +2,7 @@ name: Docker Build
 env:
   STACK_ORCHESTRATOR_REF: "f08b0365bde60c70204dd76c77ffa20f4e259625"
   IPLD_ETH_DB_REF: "6c00c38cc4e1db6f7c4cecbb62fdfd540fba50d6"
-  GO_ETHEREUM_REF: "v1.11.5-statediff-4.3.9-alpha" # Use the tag, we are going to download the bin not build it.
+  GO_ETHEREUM_REF: "v1.11.5-statediff-4.3.10-alpha" # Use the tag, we are going to download the bin not build it.
   IPLD_ETH_SERVER_REF: "136faf8b4042be21b10bd4383aae6e0265d1e139"
 
 on: [pull_request]
