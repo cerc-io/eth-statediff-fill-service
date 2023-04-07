@@ -131,6 +131,7 @@ func init() {
 	viper.BindPFlag("eth.server.ipcPath", serveCmd.PersistentFlags().Lookup("eth-server-ipc-path"))
 
 	viper.BindPFlag("ethereum.httpPath", serveCmd.PersistentFlags().Lookup("eth-http-path"))
+	viper.BindPFlag("ethereum.wsPath", serveCmd.PersistentFlags().Lookup("eth-ws-path"))
 
 	// watched address gap filler flags
 	viper.BindPFlag("watch.fill.interval", serveCmd.PersistentFlags().Lookup("watched-address-gap-filler-interval"))

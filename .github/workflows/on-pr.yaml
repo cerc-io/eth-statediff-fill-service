@@ -1,8 +1,8 @@
 name: Docker Build
 env:
-  STACK_ORCHESTRATOR_REF: "e62830c982d4dfc5f3c1c2b12c1754a7e9b538f1"
+  STACK_ORCHESTRATOR_REF: "f08b0365bde60c70204dd76c77ffa20f4e259625"
   IPLD_ETH_DB_REF: "6c00c38cc4e1db6f7c4cecbb62fdfd540fba50d6"
-  GO_ETHEREUM_REF: "v1.11.5-statediff-4.3.9-alpha" # Use the tag, we are going to download the bin not build it.
+  GO_ETHEREUM_REF: "v1.11.5-statediff-4.3.10-alpha" # Use the tag, we are going to download the bin not build it.
   IPLD_ETH_SERVER_REF: "136faf8b4042be21b10bd4383aae6e0265d1e139"
 
 on: [pull_request]
@@ -64,6 +64,7 @@ jobs:
       ETH_FORWARD_ETH_CALLS: false
       ETH_PROXY_ON_ERROR: false
       ETH_HTTP_PATH: "go-ethereum:8545"
+      ETH_WS_PATH: "go-ethereum:8546"
       WATCHED_ADDRESS_GAP_FILLER_INTERVAL: 5
     runs-on: ubuntu-latest
     steps:
@@ -103,6 +104,7 @@ jobs:
           echo eth_forward_eth_calls=$ETH_FORWARD_ETH_CALLS >> ./config.sh
           echo eth_proxy_on_error=$ETH_PROXY_ON_ERROR >> ./config.sh
           echo eth_http_path=$ETH_HTTP_PATH >> ./config.sh
+          echo eth_ws_path=$ETH_WS_PATH >> ./config.sh
           echo watched_address_gap_filler_interval=$WATCHED_ADDRESS_GAP_FILLER_INTERVAL >> ./config.sh
           cat ./config.sh
       - name: Download Geth geth

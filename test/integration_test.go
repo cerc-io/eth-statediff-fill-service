@@ -18,25 +18,32 @@ import (
 )
 
 var (
-	ipldMethod    = "vdb_watchAddress"
-	sleepInterval = 2 * time.Second
+	ipldMethod           = "vdb_watchAddress"
+	sleepInterval        = 2 * time.Second
+	serviceInterval      int64
+	gethRPCClient        *rpc.Client
+	ipldClient           *ethclient.Client
+	fillServiceRPCClient *rpc.Client
 )
 
 var _ = Describe("Watched address gap filling service integration test", func() {
-	serviceInterval, err := strconv.ParseInt(os.Getenv("WATCHED_ADDRESS_GAP_FILLER_INTERVAL"), 10, 0)
-	Expect(err).To(BeNil())
+	It("service init", func() {
+		var err error
+		serviceInterval, err = strconv.ParseInt(os.Getenv("WATCHED_ADDRESS_GAP_FILLER_INTERVAL"), 10, 0)
+		Expect(err).To(BeNil())
 
-	gethHttpPath := "http://127.0.0.1:8545"
-	gethRPCClient, err := rpc.Dial(gethHttpPath)
-	Expect(err).ToNot(HaveOccurred())
+		gethHttpPath := "http://127.0.0.1:8545"
+		gethRPCClient, err = rpc.Dial(gethHttpPath)
+		Expect(err).ToNot(HaveOccurred())
 
-	ipldEthHttpPath := "http://127.0.0.1:8081"
-	ipldClient, err := ethclient.Dial(ipldEthHttpPath)
-	Expect(err).ToNot(HaveOccurred())
+		ipldEthHttpPath := "http://127.0.0.1:8081"
+		ipldClient, err = ethclient.Dial(ipldEthHttpPath)
+		Expect(err).ToNot(HaveOccurred())
 
-	fillServiceHttpPath := "http://127.0.0.1:8085"
-	fillServiceRPCClient, err := rpc.Dial(fillServiceHttpPath)
-	Expect(err).ToNot(HaveOccurred())
+		fillServiceHttpPath := "http://127.0.0.1:8085"
+		fillServiceRPCClient, err = rpc.Dial(fillServiceHttpPath)
+		Expect(err).ToNot(HaveOccurred())
+	})
 
 	var (
 		ctx = context.Background()
